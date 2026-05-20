@@ -344,8 +344,8 @@
       </div>
 
       <div class="sectionTitle"><span class="pill">5</span> Dopadová plocha</div>
-      <label class="toggleLine"><span>Zobrazit zvýšenou plošinu</span><input id="platformOn" type="checkbox" checked /></label>
-      <label class="toggleLine"><span>Zobrazit díru do země</span><input id="holeOn" type="checkbox" checked /></label>
+      <label class="toggleLine"><span>Zobrazit zvýšenou plošinu</span><input id="platformOn" type="checkbox" /></label>
+      <label class="toggleLine"><span>Zobrazit díru do země</span><input id="holeOn" type="checkbox" /></label>
       <div class="hint">
         Plošinu a díru posuneš tažením. Pravý dolní roh slouží ke změně velikosti. Kliknutím na kótu u boku můžeš přesně přepsat výšku nebo hloubku.<br><br>
         Těleso můžeš také táhnout po jeho trajektorii: tím ručně nastavuješ aktuální čas animace a všechny hodnoty se přepočítají.
@@ -416,8 +416,8 @@
     last: performance.now(),
     airOn: false,
     kAir: 0.04,
-    platformOn: true,
-    holeOn: true,
+    platformOn: false,
+    holeOn: false,
     platform: { x: 30, y: 0, w: 18, h: 12 },
     hole: { x: 58, y: -18, w: 20, h: 18 },
     drag: null,
@@ -426,21 +426,6 @@
 
   const fmt = (n, d = 2) => Number.isFinite(n) ? n.toLocaleString('cs-CZ', { maximumFractionDigits: d, minimumFractionDigits: d }) : '—';
   const fmt0 = n => Number.isFinite(n) ? n.toLocaleString('cs-CZ', { maximumFractionDigits: 0 }) : '—';
-
-  function fmtAxis(n, step) {
-    if (!Number.isFinite(n)) return '—';
-    if (Math.abs(n) < step / 1000) n = 0;
-
-    let decimals = 0;
-    if (step < 1) decimals = Math.ceil(-Math.log10(step)) + 1;
-    decimals = Math.min(4, Math.max(0, decimals));
-
-    return n.toLocaleString('cs-CZ', {
-      minimumFractionDigits: 0,
-      maximumFractionDigits: decimals
-    });
-  }
-
   const clamp = (v,min,max) => Math.max(min, Math.min(max, v));
 
   function resizeCanvas() {
@@ -615,7 +600,7 @@
     for (let x=x0; x<=x1; x+=step) {
       const px = X(x);
       ctx.beginPath(); ctx.moveTo(px,0); ctx.lineTo(px,rect.height); ctx.stroke();
-      if (Math.abs(x) > 1e-6) ctx.fillText(fmtAxis(x, step), px+3, Y(0)-6);
+      if (Math.abs(x) > 1e-6) ctx.fillText(fmt0(x), px+3, Y(0)-6);
     }
 
     const y0 = Math.floor(sc.invY(rect.height)/step)*step;
@@ -623,7 +608,7 @@
     for (let y=y0; y<=y1; y+=step) {
       const py = Y(y);
       ctx.beginPath(); ctx.moveTo(0,py); ctx.lineTo(rect.width,py); ctx.stroke();
-      if (Math.abs(y) > 1e-6) ctx.fillText(fmtAxis(y, step), X(0)+5, py-4);
+      if (Math.abs(y) > 1e-6) ctx.fillText(fmt0(y), X(0)+5, py-4);
     }
   }
 
