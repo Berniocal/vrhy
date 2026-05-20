@@ -1,0 +1,1092 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Vrhy v homogenním tíhovém poli</title>
+  <script>
+    window.MathJax = {
+      tex: { inlineMath: [['\\(', '\\)'], ['$', '$']] },
+      svg: { fontCache: 'global' }
+    };
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+  <style>
+    :root {
+      --bg: #eef3ef;
+      --panel: rgba(255,255,255,.82);
+      --panel2: rgba(248,250,248,.92);
+      --text: #1f2a24;
+      --muted: #65736c;
+      --line: rgba(45,70,55,.16);
+      --green: #5f9b78;
+      --green2: #dceee3;
+      --blue: #6c91b8;
+      --orange: #c9925d;
+      --red: #c46a6a;
+      --shadow: 0 18px 45px rgba(37, 58, 46, .13);
+      --radius: 22px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at top left, rgba(120,170,130,.25), transparent 35%),
+        radial-gradient(circle at bottom right, rgba(110,145,185,.18), transparent 38%),
+        var(--bg);
+      color: var(--text);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    header {
+      max-width: 1360px;
+      margin: 0 auto;
+      padding: 22px 16px 8px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(1.55rem, 3vw, 2.35rem);
+      letter-spacing: -.035em;
+    }
+
+    .subtitle {
+      margin-top: 6px;
+      color: var(--muted);
+      line-height: 1.45;
+    }
+
+    .app {
+      max-width: 1360px;
+      margin: 0 auto;
+      padding: 14px 16px 24px;
+      display: grid;
+      grid-template-columns: 390px 1fr;
+      gap: 16px;
+    }
+
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(14px);
+    }
+
+    .controls {
+      padding: 16px;
+      align-self: start;
+      position: sticky;
+      top: 12px;
+      max-height: calc(100vh - 24px);
+      overflow: auto;
+    }
+
+    .stageWrap {
+      padding: 12px;
+      min-width: 0;
+    }
+
+    .modeGrid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+
+    button, select, input {
+      font: inherit;
+    }
+
+    .modeBtn, .softBtn {
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.78);
+      border-radius: 16px;
+      padding: 10px 11px;
+      cursor: pointer;
+      color: var(--text);
+      transition: .18s ease;
+      text-align: center;
+      user-select: none;
+    }
+
+    .modeBtn:hover, .softBtn:hover { transform: translateY(-1px); background: white; }
+
+    .modeBtn.active {
+      background: var(--green2);
+      border-color: rgba(75,130,95,.35);
+      box-shadow: inset 0 0 0 1px rgba(75,130,95,.16);
+      font-weight: 700;
+    }
+
+    .row {
+      display: grid;
+      grid-template-columns: 1fr 120px;
+      gap: 10px;
+      align-items: center;
+      padding: 9px 0;
+      border-bottom: 1px solid rgba(45,70,55,.08);
+    }
+
+    .row label {
+      color: var(--text);
+      font-size: .94rem;
+      line-height: 1.25;
+    }
+
+    .row small { display: block; color: var(--muted); margin-top: 2px; }
+
+    input[type="number"] {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 13px;
+      padding: 9px 10px;
+      background: rgba(255,255,255,.9);
+      color: var(--text);
+      outline: none;
+    }
+
+    input[type="range"] { width: 100%; }
+
+    .sectionTitle {
+      margin: 17px 0 7px;
+      font-weight: 800;
+      color: #26362d;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 25px;
+      height: 25px;
+      border-radius: 999px;
+      background: var(--green2);
+      color: #356447;
+      font-size: .82rem;
+      font-weight: 800;
+    }
+
+    .actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-top: 14px;
+    }
+
+    .primary {
+      background: #5f9b78;
+      color: white;
+      border-color: transparent;
+      font-weight: 800;
+    }
+
+    .danger { color: #7d3838; }
+
+    .scene {
+      width: 100%;
+      height: min(78vh, 820px);
+      min-height: 560px;
+      border-radius: 19px;
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.9), rgba(231,239,236,.94));
+      border: 1px solid var(--line);
+      overflow: hidden;
+      touch-action: none;
+      display: block;
+    }
+
+    .below {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 12px;
+    }
+
+    .mini {
+      padding: 14px;
+      background: var(--panel2);
+      border-radius: 18px;
+      border: 1px solid var(--line);
+      overflow: auto;
+    }
+
+    .mini h2 {
+      font-size: 1rem;
+      margin: 0 0 10px;
+    }
+
+    .results {
+      display: grid;
+      gap: 7px;
+      font-size: .95rem;
+    }
+
+    .resultLine {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 7px 9px;
+      border-radius: 12px;
+      background: rgba(255,255,255,.68);
+      border: 1px solid rgba(45,70,55,.08);
+    }
+
+    .resultLine span:last-child {
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .formulas {
+      color: #2d3b33;
+      line-height: 1.55;
+      font-size: .95rem;
+    }
+
+    .hint {
+      color: var(--muted);
+      font-size: .9rem;
+      line-height: 1.45;
+      padding: 10px 12px;
+      border-radius: 15px;
+      background: rgba(255,255,255,.58);
+      border: 1px dashed rgba(45,70,55,.18);
+      margin-top: 11px;
+    }
+
+    .toggleLine {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 8px 0;
+    }
+
+    .toggleLine input { width: auto; }
+
+    .dimEditor {
+      position: fixed;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      background: rgba(20,30,25,.25);
+      z-index: 5;
+      padding: 16px;
+    }
+
+    .dimBox {
+      width: min(420px, 100%);
+      background: white;
+      border-radius: 24px;
+      box-shadow: 0 30px 70px rgba(0,0,0,.2);
+      padding: 18px;
+      border: 1px solid rgba(45,70,55,.14);
+    }
+
+    .dimBox h3 { margin: 0 0 10px; }
+    .dimBox .actions { grid-template-columns: 1fr 1fr; }
+
+    @media (max-width: 980px) {
+      .app { grid-template-columns: 1fr; }
+      .controls { position: static; max-height: none; }
+      .below { grid-template-columns: 1fr; }
+      .scene { height: 72vh; min-height: 520px; }
+    }
+
+    @media (max-width: 520px) {
+      .modeGrid { grid-template-columns: 1fr; }
+      .row { grid-template-columns: 1fr; gap: 5px; }
+      .actions { grid-template-columns: 1fr; }
+      header { padding-top: 16px; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Vrhy v homogenním tíhovém poli</h1>
+    <div class="subtitle">Interaktivní model pro volný pád, svislé vrhy, vodorovný vrh a šikmý vrh. Zem i překážky můžeš upravovat tažením.</div>
+  </header>
+
+  <main class="app">
+    <aside class="card controls">
+      <div class="sectionTitle"><span class="pill">1</span> Typ vrhu</div>
+      <div class="modeGrid" id="modeGrid"></div>
+
+      <div class="sectionTitle"><span class="pill">2</span> Zadání</div>
+      <div id="inputs"></div>
+
+      <div class="sectionTitle"><span class="pill">3</span> Animace</div>
+      <div class="row">
+        <label for="speed">Rychlost animace<small>Jen pro přehrávání, ne pro fyziku.</small></label>
+        <input id="speed" type="number" min="0.1" max="5" step="0.1" value="1" />
+      </div>
+      <div class="actions">
+        <button class="softBtn primary" id="playBtn">Spustit</button>
+        <button class="softBtn" id="pauseBtn">Pauza</button>
+        <button class="softBtn" id="stepBackBtn">◀ Krok</button>
+        <button class="softBtn" id="stepForwardBtn">Krok ▶</button>
+        <button class="softBtn" id="resetBtn">Reset času</button>
+        <button class="softBtn danger" id="resetSceneBtn">Reset ploch</button>
+      </div>
+
+      <div class="sectionTitle"><span class="pill">4</span> Odpor vzduchu</div>
+      <label class="toggleLine"><span>Zapnout odpor vzduchu</span><input id="airOn" type="checkbox" /></label>
+      <div class="row">
+        <label for="kAir">Koeficient odporu<small>Čím větší číslo, tím víc se těleso brzdí.</small></label>
+        <input id="kAir" type="number" min="0" max="1" step="0.01" value="0.04" />
+      </div>
+
+      <div class="sectionTitle"><span class="pill">5</span> Dopadová plocha</div>
+      <label class="toggleLine"><span>Zobrazit zvýšenou plošinu</span><input id="platformOn" type="checkbox" checked /></label>
+      <label class="toggleLine"><span>Zobrazit díru do země</span><input id="holeOn" type="checkbox" checked /></label>
+      <div class="hint">
+        Plošinu a díru posuneš tažením. Pravý dolní roh slouží ke změně velikosti. Kliknutím na kótu u boku můžeš přesně přepsat výšku nebo hloubku.<br><br>
+        Těleso můžeš také táhnout po jeho trajektorii: tím ručně nastavuješ aktuální čas animace a všechny hodnoty se přepočítají.
+      </div>
+    </aside>
+
+    <section class="card stageWrap">
+      <canvas id="scene" class="scene"></canvas>
+      <div class="below">
+        <div class="mini">
+          <h2>Výpočty</h2>
+          <div id="results" class="results"></div>
+        </div>
+        <div class="mini">
+          <h2>Vzorový postup</h2>
+          <div id="formulas" class="formulas"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div class="dimEditor" id="dimEditor">
+    <div class="dimBox">
+      <h3 id="dimTitle">Upravit kótu</h3>
+      <input id="dimInput" type="number" step="0.1" />
+      <div class="actions">
+        <button class="softBtn primary" id="dimSave">Uložit</button>
+        <button class="softBtn" id="dimCancel">Zrušit</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+(() => {
+  const canvas = document.getElementById('scene');
+  const ctx = canvas.getContext('2d');
+  const modeGrid = document.getElementById('modeGrid');
+  const inputsEl = document.getElementById('inputs');
+  const resultsEl = document.getElementById('results');
+  const formulasEl = document.getElementById('formulas');
+
+  const modes = {
+    freefall: { label: 'Volný pád', fields: ['g','h'] },
+    verticalUp: { label: 'Svislý vrh vzhůru', fields: ['g','v0'] },
+    verticalDown: { label: 'Svislý vrh dolů', fields: ['g','h','v0'] },
+    horizontal: { label: 'Vodorovný vrh', fields: ['g','h','vx0'] },
+    oblique: { label: 'Šikmý vrh', fields: ['g','v0','angle'] }
+  };
+
+  const fieldDefs = {
+    g: { label: 'Tíhové zrychlení', unit: 'm·s⁻²', min: 0.1, max: 50, step: 0.01, desc: 'Země: 9,81 m·s⁻²' },
+    h: { label: 'Počáteční výška', unit: 'm', min: 0, max: 200, step: 0.1, desc: 'Výška nad základní zemí.' },
+    v0: { label: 'Počáteční rychlost', unit: 'm·s⁻¹', min: 0, max: 200, step: 0.1, desc: 'U svislého vrhu směr určuje typ vrhu.' },
+    vx0: { label: 'Počáteční vodorovná rychlost', unit: 'm·s⁻¹', min: 0, max: 200, step: 0.1, desc: 'Svislá počáteční rychlost je nulová.' },
+    angle: { label: 'Úhel vrhu', unit: '°', min: 0, max: 89, step: 0.1, desc: 'Úhel nad vodorovnou rovinou.' }
+  };
+
+  const state = {
+    mode: 'freefall',
+    g: 9.81,
+    h: 30,
+    v0: 20,
+    vx0: 12,
+    angle: 45,
+    speed: 1,
+    t: 0,
+    playing: false,
+    last: performance.now(),
+    airOn: false,
+    kAir: 0.04,
+    platformOn: true,
+    holeOn: true,
+    platform: { x: 30, y: 0, w: 18, h: 12 },
+    hole: { x: 58, y: -18, w: 20, h: 18 },
+    drag: null,
+    dimTarget: null
+  };
+
+  const fmt = (n, d = 2) => Number.isFinite(n) ? n.toLocaleString('cs-CZ', { maximumFractionDigits: d, minimumFractionDigits: d }) : '—';
+  const fmt0 = n => Number.isFinite(n) ? n.toLocaleString('cs-CZ', { maximumFractionDigits: 0 }) : '—';
+
+  function fmtAxis(n, step) {
+    if (!Number.isFinite(n)) return '—';
+    if (Math.abs(n) < step / 1000) n = 0;
+
+    let decimals = 0;
+    if (step < 1) decimals = Math.ceil(-Math.log10(step)) + 1;
+    decimals = Math.min(4, Math.max(0, decimals));
+
+    return n.toLocaleString('cs-CZ', {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: decimals
+    });
+  }
+
+  const clamp = (v,min,max) => Math.max(min, Math.min(max, v));
+
+  function resizeCanvas() {
+    const rect = canvas.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = Math.round(rect.width * dpr);
+    canvas.height = Math.round(rect.height * dpr);
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+  }
+
+  function initialVector() {
+    const m = state.mode;
+    if (m === 'freefall') return { x0: 0, y0: state.h, vx: 0, vy: 0 };
+    if (m === 'verticalUp') return { x0: 0, y0: 0, vx: 0, vy: state.v0 };
+    if (m === 'verticalDown') return { x0: 0, y0: state.h, vx: 0, vy: -state.v0 };
+    if (m === 'horizontal') return { x0: 0, y0: state.h, vx: state.vx0, vy: 0 };
+    const a = state.angle * Math.PI / 180;
+    return { x0: 0, y0: 0, vx: state.v0 * Math.cos(a), vy: state.v0 * Math.sin(a) };
+  }
+
+  function posAt(t) {
+    if (state.airOn) return posAtAir(t);
+    const iv = initialVector();
+    return {
+      x: iv.x0 + iv.vx * t,
+      y: iv.y0 + iv.vy * t - 0.5 * state.g * t * t,
+      vx: iv.vx,
+      vy: iv.vy - state.g * t
+    };
+  }
+
+  function posAtAir(t) {
+    const iv = initialVector();
+    let x = iv.x0, y = iv.y0, vx = iv.vx, vy = iv.vy;
+    const dtBase = 0.01;
+    let time = 0;
+    while (time < t) {
+      const dt = Math.min(dtBase, t - time);
+      const v = Math.hypot(vx, vy);
+      const ax = -state.kAir * v * vx;
+      const ay = -state.g - state.kAir * v * vy;
+      vx += ax * dt;
+      vy += ay * dt;
+      x += vx * dt;
+      y += vy * dt;
+      time += dt;
+    }
+    return { x, y, vx, vy };
+  }
+
+  function groundY(x) {
+    let y = 0;
+    if (state.platformOn && x >= state.platform.x && x <= state.platform.x + state.platform.w) {
+      y = Math.max(y, state.platform.h);
+    }
+    if (state.holeOn && x >= state.hole.x && x <= state.hole.x + state.hole.w) {
+      y = Math.min(y, state.hole.y);
+    }
+    return y;
+  }
+
+  function impactTime() {
+    let lo = 0;
+    let hi = 0.05;
+    const maxT = 80;
+    while (hi < maxT && posAt(hi).y > groundY(posAt(hi).x)) hi *= 1.18;
+    if (hi >= maxT) return maxT;
+    for (let i=0; i<70; i++) {
+      const mid = (lo + hi) / 2;
+      if (posAt(mid).y > groundY(posAt(mid).x)) lo = mid;
+      else hi = mid;
+    }
+    return hi;
+  }
+
+  function peakInfo() {
+    if (!state.airOn) {
+      const iv = initialVector();
+      if (iv.vy <= 0) return { tMax: 0, hMax: iv.y0 };
+      const tMax = iv.vy / state.g;
+      return { tMax, hMax: iv.y0 + iv.vy * tMax - 0.5 * state.g * tMax * tMax };
+    }
+    const tImp = impactTime();
+    let best = { tMax: 0, hMax: posAt(0).y };
+    for (let i=0; i<=240; i++) {
+      const t = tImp * i / 240;
+      const p = posAt(t);
+      if (p.y > best.hMax) best = { tMax: t, hMax: p.y };
+    }
+    return best;
+  }
+
+  function scaleInfo() {
+    const rect = canvas.getBoundingClientRect();
+    const tImp = impactTime();
+    const points = [];
+
+    for (let i=0; i<=180; i++) points.push(posAt(tImp * i / 180));
+
+    // Automatický zoom se řídí hlavně trajektorií tělesa.
+    // Překážky se započítají jen tehdy, když jsou blízko oblasti letu,
+    // aby vzdálená plošina nebo díra zbytečně neoddalovala malý vrh.
+    const trajMinX = Math.min(...points.map(p => p.x));
+    const trajMaxX = Math.max(...points.map(p => p.x));
+    const nearMargin = Math.max(12, (trajMaxX - trajMinX) * 0.7);
+
+    if (state.platformOn && state.platform.x < trajMaxX + nearMargin && state.platform.x + state.platform.w > trajMinX - nearMargin) {
+      points.push({x: state.platform.x, y: 0});
+      points.push({x: state.platform.x + state.platform.w, y: state.platform.h});
+    }
+    if (state.holeOn && state.hole.x < trajMaxX + nearMargin && state.hole.x + state.hole.w > trajMinX - nearMargin) {
+      points.push({x: state.hole.x, y: 0});
+      points.push({x: state.hole.x + state.hole.w, y: state.hole.y});
+    }
+
+    let minX = Math.min(...points.map(p => p.x));
+    let maxX = Math.max(...points.map(p => p.x));
+    let minY = Math.min(...points.map(p => p.y), 0);
+    let maxY = Math.max(...points.map(p => p.y), 0);
+
+    // Malý bezpečný okraj v metrech, ale ne tak velký, aby zničil zoom u pomalých vrhů.
+    const spanX = Math.max(0.08, maxX - minX);
+    const spanY = Math.max(0.08, maxY - minY);
+
+    // Mnohem agresivnější přiblížení pro malé rychlosti a desetinné hodnoty.
+    const marginX = Math.max(0.15, spanX * 0.08);
+    const marginY = Math.max(0.15, spanY * 0.10);
+    minX -= marginX;
+    maxX += marginX;
+    minY -= marginY;
+    maxY += marginY;
+
+    // Aby svislé vrhy nebyly nalepené na levém okraji.
+    // U velmi malých rychlostí dovol mnohem bližší zoom.
+    if (maxX - minX < 0.8) {
+      const cx = (minX + maxX) / 2;
+      minX = cx - 0.4;
+      maxX = cx + 0.4;
+    }
+    if (maxY - minY < 0.8) {
+      const cy = (minY + maxY) / 2;
+      minY = cy - 0.4;
+      maxY = cy + 0.4;
+    }
+
+    const pad = 46;
+    const sx = (rect.width - 2*pad) / (maxX - minX || 1);
+    const sy = (rect.height - 2*pad) / (maxY - minY || 1);
+    const s = Math.max(2, Math.min(sx, sy));
+    return { rect, s, minX, maxY, pad,
+      X: x => pad + (x - minX) * s,
+      Y: y => pad + (maxY - y) * s,
+      invX: X => minX + (X - pad) / s,
+      invY: Y => maxY - (Y - pad) / s
+    };
+  }
+
+  function drawGrid(sc) {
+    const { rect, X, Y, s } = sc;
+    ctx.clearRect(0,0,rect.width,rect.height);
+    ctx.fillStyle = 'rgba(255,255,255,.35)';
+    ctx.fillRect(0,0,rect.width,rect.height);
+
+    const step = niceStep(60 / s);
+    ctx.strokeStyle = 'rgba(45,70,55,.08)';
+    ctx.lineWidth = 1;
+    ctx.font = '12px system-ui';
+    ctx.fillStyle = 'rgba(45,70,55,.45)';
+
+    const x0 = Math.floor(sc.minX/step)*step;
+    const x1 = sc.invX(rect.width);
+    for (let x=x0; x<=x1; x+=step) {
+      const px = X(x);
+      ctx.beginPath(); ctx.moveTo(px,0); ctx.lineTo(px,rect.height); ctx.stroke();
+      if (Math.abs(x) > 1e-6) ctx.fillText(fmtAxis(x, step), px+3, Y(0)-6);
+    }
+
+    const y0 = Math.floor(sc.invY(rect.height)/step)*step;
+    const y1 = Math.ceil(sc.maxY/step)*step;
+    for (let y=y0; y<=y1; y+=step) {
+      const py = Y(y);
+      ctx.beginPath(); ctx.moveTo(0,py); ctx.lineTo(rect.width,py); ctx.stroke();
+      if (Math.abs(y) > 1e-6) ctx.fillText(fmtAxis(y, step), X(0)+5, py-4);
+    }
+  }
+
+  function niceStep(raw) {
+    const pow = Math.pow(10, Math.floor(Math.log10(raw || 1)));
+    const n = raw / pow;
+    if (n < 1.6) return pow;
+    if (n < 3.5) return 2 * pow;
+    if (n < 7.5) return 5 * pow;
+    return 10 * pow;
+  }
+
+  function drawGround(sc) {
+    const { X, Y, rect } = sc;
+    const y0 = Y(0);
+    ctx.strokeStyle = '#55715f';
+    ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.moveTo(0,y0); ctx.lineTo(rect.width,y0); ctx.stroke();
+
+    ctx.fillStyle = 'rgba(95,155,120,.18)';
+    ctx.fillRect(0,y0,rect.width,rect.height-y0);
+
+    if (state.platformOn) drawBlock(sc, state.platform, 'platform');
+    if (state.holeOn) drawHole(sc, state.hole);
+  }
+
+  function drawBlock(sc, b, type) {
+    const x = sc.X(b.x), top = sc.Y(b.h), w = b.w*sc.s, h = b.h*sc.s;
+    ctx.fillStyle = 'rgba(95,155,120,.42)';
+    ctx.strokeStyle = 'rgba(63,115,82,.9)';
+    ctx.lineWidth = 2;
+    roundRect(ctx, x, top, w, h, 6, true, true);
+    drawResizeHandle(x+w, top+h);
+    drawDimension(sc, b.x+b.w, 0, b.h, `${fmt(b.h,1)} m`, type);
+  }
+
+  function drawHole(sc, b) {
+    const x = sc.X(b.x), top = sc.Y(0), w = b.w*sc.s, h = Math.abs(b.h)*sc.s;
+    ctx.fillStyle = 'rgba(83,105,124,.26)';
+    ctx.strokeStyle = 'rgba(70,90,110,.9)';
+    ctx.lineWidth = 2;
+    roundRect(ctx, x, top, w, h, 6, true, true);
+    ctx.fillStyle = 'rgba(0,0,0,.08)';
+    ctx.fillRect(x, top, w, h);
+    drawResizeHandle(x+w, top+h);
+    drawDimension(sc, b.x+b.w, 0, b.y, `${fmt(Math.abs(b.y),1)} m`, 'hole');
+  }
+
+  const dimHitboxes = [];
+  function drawDimension(sc, x, yA, yB, label, target) {
+    const px = sc.X(x) + 16;
+    const y1 = sc.Y(yA);
+    const y2 = sc.Y(yB);
+    ctx.strokeStyle = target === 'hole' ? '#516b86' : '#4c855f';
+    ctx.fillStyle = ctx.strokeStyle;
+    ctx.lineWidth = 1.6;
+    ctx.beginPath(); ctx.moveTo(px,y1); ctx.lineTo(px,y2); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(px-5,y1); ctx.lineTo(px+5,y1); ctx.moveTo(px-5,y2); ctx.lineTo(px+5,y2); ctx.stroke();
+    const mid = (y1+y2)/2;
+    ctx.save();
+    ctx.translate(px+18, mid);
+    ctx.rotate(-Math.PI/2);
+    ctx.font = '700 13px system-ui';
+    const tw = ctx.measureText(label).width;
+    ctx.fillStyle = 'rgba(255,255,255,.86)';
+    roundRect(ctx, -tw/2-7, -11, tw+14, 22, 9, true, false);
+    ctx.fillStyle = target === 'hole' ? '#38536d' : '#356447';
+    ctx.fillText(label, -tw/2, 5);
+    ctx.restore();
+    dimHitboxes.push({ target, x: px+7, y: mid-45, w: 36, h: 90 });
+  }
+
+  function drawResizeHandle(x,y) {
+    ctx.fillStyle = 'rgba(255,255,255,.95)';
+    ctx.strokeStyle = 'rgba(45,70,55,.45)';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.arc(x, y, 7, 0, Math.PI*2); ctx.fill(); ctx.stroke();
+  }
+
+  function drawTrajectory(sc) {
+    const tImp = impactTime();
+    ctx.strokeStyle = '#5b86b1';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    for (let i=0; i<=180; i++) {
+      const p = posAt(tImp*i/180);
+      const X = sc.X(p.x), Y = sc.Y(p.y);
+      if (i===0) ctx.moveTo(X,Y); else ctx.lineTo(X,Y);
+    }
+    ctx.stroke();
+
+    ctx.setLineDash([5,5]);
+    ctx.strokeStyle = 'rgba(91,134,177,.35)';
+    ctx.lineWidth = 1.5;
+    const pk = peakInfo();
+    const pp = posAt(pk.tMax);
+    ctx.beginPath(); ctx.moveTo(sc.X(pp.x), sc.Y(pp.y)); ctx.lineTo(sc.X(pp.x), sc.Y(0)); ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  function drawBody(sc) {
+    const tImp = impactTime();
+    if (state.t > tImp) state.t = tImp;
+    const p = posAt(state.t);
+    const X = sc.X(p.x), Y = sc.Y(p.y);
+
+    const speed = Math.hypot(p.vx,p.vy);
+    const minVector = 1e-6;
+
+    // Složky rychlosti se zobrazují u vodorovného a šikmého vrhu.
+    // Všechny vektory vycházejí ze středu tělesa.
+    // Nulová složka se vůbec nekreslí.
+    if (state.mode === 'horizontal' || state.mode === 'oblique') {
+      if (Math.abs(p.vx) > minVector) {
+        const vxLen = clamp(Math.abs(p.vx) * sc.s * .22, 0, 85);
+        if (vxLen > 0.5) drawArrow(X, Y, X + Math.sign(p.vx) * vxLen, Y, '#5f9b78', 'vₓ');
+      }
+      if (Math.abs(p.vy) > minVector) {
+        const vyLen = clamp(Math.abs(p.vy) * sc.s * .22, 0, 85);
+        if (vyLen > 0.5) drawArrow(X, Y, X, Y - Math.sign(p.vy) * vyLen, '#6c91b8', 'vᵧ');
+      }
+    }
+
+    // Celkový vektor rychlosti: pokud je nulový, nekreslí se.
+    if (speed > minVector) {
+      const len = clamp(speed * sc.s * .22, 0, 95);
+      const angle = Math.atan2(-p.vy, p.vx);
+      if (len > 0.5) drawArrow(X,Y, X + len*Math.cos(angle), Y + len*Math.sin(angle), '#c46a6a', 'v');
+    }
+
+    ctx.fillStyle = '#c9925d';
+    ctx.strokeStyle = '#875b30';
+    ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(X,Y,10,0,Math.PI*2); ctx.fill(); ctx.stroke();
+
+    ctx.font = '700 13px system-ui';
+    ctx.fillStyle = '#6b4420';
+    ctx.fillText(`t = ${fmt(state.t,2)} s`, X + 13, Y - 12);
+  }
+
+  function drawLiveBadge(sc, p) {
+    const speed = Math.hypot(p.vx,p.vy);
+    const gy = groundY(p.x);
+    const hNow = p.y - gy;
+    const lines = [
+      `t = ${fmt(state.t,2)} s`,
+      `h = ${fmt(Math.max(0, hNow),2)} m`,
+      `v = ${fmt(speed,2)} m·s⁻¹`
+    ];
+    if (state.mode === 'horizontal' || state.mode === 'oblique') {
+      lines.push(`vₓ = ${fmt(p.vx,2)} m·s⁻¹`);
+      lines.push(`vᵧ = ${fmt(p.vy,2)} m·s⁻¹`);
+    }
+
+    ctx.font = '700 13px system-ui';
+    const w = Math.max(...lines.map(line => ctx.measureText(line).width)) + 22;
+    const h = lines.length * 20 + 12;
+    const rect = canvas.getBoundingClientRect();
+    const bx = rect.width - w - 14;
+    const by = 14;
+
+    ctx.fillStyle = 'rgba(255,255,255,.9)';
+    ctx.strokeStyle = 'rgba(45,70,55,.16)';
+    ctx.lineWidth = 1;
+    roundRect(ctx, bx, by, w, h, 14, true, true);
+    ctx.fillStyle = '#25352c';
+    lines.forEach((line, i) => ctx.fillText(line, bx + 11, by + 22 + i*20));
+  }
+
+  function drawArrow(x1,y1,x2,y2,color,label='') {
+    ctx.strokeStyle = color;
+    ctx.fillStyle = color;
+    ctx.lineWidth = 2.5;
+    ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
+    const a = Math.atan2(y2-y1,x2-x1);
+    ctx.beginPath();
+    ctx.moveTo(x2,y2);
+    ctx.lineTo(x2-9*Math.cos(a-.45), y2-9*Math.sin(a-.45));
+    ctx.lineTo(x2-9*Math.cos(a+.45), y2-9*Math.sin(a+.45));
+    ctx.closePath(); ctx.fill();
+    if (label) {
+      ctx.font = '800 13px system-ui';
+      ctx.fillStyle = color;
+      ctx.fillText(label, x2 + 5, y2 - 5);
+    }
+  }
+
+  function render() {
+    resizeCanvas();
+    dimHitboxes.length = 0;
+    const sc = scaleInfo();
+    drawGrid(sc);
+    drawGround(sc);
+    drawTrajectory(sc);
+    drawBody(sc);
+    const currentPoint = posAt(state.t);
+    drawLiveBadge(sc, currentPoint);
+    updateOutput();
+  }
+
+  function updateOutput() {
+    const iv = initialVector();
+    const tImp = impactTime();
+    const pImp = posAt(tImp);
+    const pk = peakInfo();
+    const vImp = Math.hypot(pImp.vx, pImp.vy);
+    const current = posAt(state.t);
+    const vNow = Math.hypot(current.vx, current.vy);
+    const hNow = Math.max(0, current.y - groundY(current.x));
+    const rows = [
+      ['Aktuální čas', `${fmt(state.t)} s`],
+      ['Aktuální výška nad plochou', `${fmt(hNow)} m`],
+      ['Aktuální rychlost', `${fmt(vNow)} m·s⁻¹`],
+      ['Doba letu', `${fmt(tImp)} s`],
+      ['Místo dopadu x', `${fmt(pImp.x)} m`],
+      ['Výška dopadu y', `${fmt(groundY(pImp.x))} m`],
+      ['Rychlost při dopadu', `${fmt(vImp)} m·s⁻¹`],
+      ['Největší výška', `${fmt(pk.hMax)} m`],
+      ['Čas do největší výšky', `${fmt(pk.tMax)} s`]
+    ];
+
+    resultsEl.innerHTML = rows.map(r => `<div class="resultLine"><span>${r[0]}</span><span>${r[1]}</span></div>`).join('');
+    formulasEl.innerHTML = formulasForMode(iv, tImp, pImp, pk, vImp);
+    if (window.MathJax?.typesetPromise) window.MathJax.typesetPromise([formulasEl]);
+  }
+
+  function formulasForMode(iv, tImp, pImp, pk, vImp) {
+    const g = fmt(state.g);
+    const yDop = fmt(groundY(pImp.x));
+    let s = `<p>Souřadnice počítám ze vztahů</p>
+      <p>\\(x = x_0 + v_{0x}t\\)</p>
+      <p>\\(y = y_0 + v_{0y}t - \\frac{1}{2}gt^2\\)</p>
+      <p>Dopad nastane tehdy, když je poloha tělesa stejná jako výška dopadové plochy: \\(y(t)=y_{dop}\\).</p>`;
+
+    if (state.mode === 'freefall') {
+      s += `<p><b>Volný pád:</b> \\(v_0=0\\), \\(y_0=${fmt(state.h)}\\,\\mathrm{m}\\), \\(g=${g}\\,\\mathrm{m\\cdot s^{-2}}\\).</p>
+      <p>Pro rovnou zem platí vzorově: \\(t=\\sqrt{\\frac{2h}{g}}\\), \\(v=gt\\). Při plošině nebo díře se místo \\(h\\) použije rozdíl \\(y_0-y_{dop}\\).</p>`;
+    }
+    if (state.mode === 'verticalUp') {
+      s += `<p><b>Svislý vrh vzhůru:</b> \\(v_{0y}=${fmt(iv.vy)}\\,\\mathrm{m\\cdot s^{-1}}\\).</p>
+      <p>Vrchol: \\(t_{max}=\\frac{v_0}{g}\\), \\(h_{max}=\\frac{v_0^2}{2g}\\).</p>`;
+    }
+    if (state.mode === 'verticalDown') {
+      s += `<p><b>Svislý vrh dolů:</b> \\(v_{0y}=-${fmt(state.v0)}\\,\\mathrm{m\\cdot s^{-1}}\\), \\(y_0=${fmt(state.h)}\\,\\mathrm{m}\\).</p>
+      <p>Rychlost při dopadu lze kontrolovat přes \\(v^2=v_0^2+2g(y_0-y_{dop})\\).</p>`;
+    }
+    if (state.mode === 'horizontal') {
+      s += `<p><b>Vodorovný vrh:</b> \\(v_{0x}=${fmt(iv.vx)}\\,\\mathrm{m\\cdot s^{-1}}\\), \\(v_{0y}=0\\).</p>
+      <p>Vodorovný pohyb je rovnoměrný: \\(x=v_{0x}t\\). Svislý pohyb je stejný jako volný pád z výšky.</p>`;
+    }
+    if (state.mode === 'oblique') {
+      s += `<p><b>Šikmý vrh:</b> \\(v_{0x}=v_0\\cos\\alpha=${fmt(iv.vx)}\\,\\mathrm{m\\cdot s^{-1}}\\), \\(v_{0y}=v_0\\sin\\alpha=${fmt(iv.vy)}\\,\\mathrm{m\\cdot s^{-1}}\\).</p>
+      <p>Pro rovnou zem platí orientačně: \\(T=\\frac{2v_0\\sin\\alpha}{g}\\), \\(d=\\frac{v_0^2\\sin 2\\alpha}{g}\\). Při dopadu na plošinu nebo do díry se čas hledá z rovnice \\(y(t)=y_{dop}\\).</p>`;
+    }
+
+    s += `<p><b>Aktuální dosazení:</b> \\(t_{dop}=${fmt(tImp)}\\,\\mathrm{s}\\), \\(y_{dop}=${yDop}\\,\\mathrm{m}\\), \\(v_{dop}=${fmt(vImp)}\\,\\mathrm{m\\cdot s^{-1}}\\).</p>`;
+    return s;
+  }
+
+  function roundRect(ctx, x, y, w, h, r, fill, stroke) {
+    r = Math.min(r, Math.abs(w)/2, Math.abs(h)/2);
+    ctx.beginPath();
+    ctx.moveTo(x+r, y);
+    ctx.lineTo(x+w-r, y);
+    ctx.quadraticCurveTo(x+w, y, x+w, y+r);
+    ctx.lineTo(x+w, y+h-r);
+    ctx.quadraticCurveTo(x+w, y+h, x+w-r, y+h);
+    ctx.lineTo(x+r, y+h);
+    ctx.quadraticCurveTo(x, y+h, x, y+h-r);
+    ctx.lineTo(x, y+r);
+    ctx.quadraticCurveTo(x, y, x+r, y);
+    if (fill) ctx.fill();
+    if (stroke) ctx.stroke();
+  }
+
+  function buildControls() {
+    modeGrid.innerHTML = Object.entries(modes).map(([key,m]) => `<button class="modeBtn ${key===state.mode?'active':''}" data-mode="${key}">${m.label}</button>`).join('');
+    modeGrid.querySelectorAll('button').forEach(btn => btn.addEventListener('click', () => {
+      state.mode = btn.dataset.mode;
+      state.t = 0;
+      buildControls();
+      render();
+    }));
+
+    const fields = modes[state.mode].fields;
+    inputsEl.innerHTML = fields.map(k => {
+      const f = fieldDefs[k];
+      return `<div class="row">
+        <label for="${k}">${f.label}<small>${f.desc}</small></label>
+        <input id="${k}" data-field="${k}" type="number" min="${f.min}" max="${f.max}" step="${f.step}" value="${state[k]}">
+      </div>`;
+    }).join('');
+
+    inputsEl.querySelectorAll('input').forEach(inp => inp.addEventListener('input', () => {
+      const k = inp.dataset.field;
+      state[k] = Number(inp.value);
+      if (!Number.isFinite(state[k])) state[k] = 0;
+      state.t = 0;
+      render();
+    }));
+  }
+
+  function syncInputs() {
+    inputsEl.querySelectorAll('input[data-field]').forEach(inp => {
+      const k = inp.dataset.field;
+      inp.value = Number.isFinite(state[k]) ? Number(state[k].toFixed(3)) : 0;
+    });
+  }
+
+  document.getElementById('speed').addEventListener('input', e => state.speed = Math.max(.1, Number(e.target.value) || 1));
+  document.getElementById('playBtn').addEventListener('click', () => { state.playing = true; state.last = performance.now(); });
+  document.getElementById('pauseBtn').addEventListener('click', () => state.playing = false);
+  document.getElementById('stepBackBtn').addEventListener('click', () => {
+    state.playing = false;
+    state.t = Math.max(0, state.t - 0.1);
+    render();
+  });
+  document.getElementById('stepForwardBtn').addEventListener('click', () => {
+    state.playing = false;
+    state.t = Math.min(impactTime(), state.t + 0.1);
+    render();
+  });
+  document.getElementById('resetBtn').addEventListener('click', () => { state.t = 0; state.playing = false; render(); });
+  document.getElementById('resetSceneBtn').addEventListener('click', () => {
+    state.platform = { x: 30, y: 0, w: 18, h: 12 };
+    state.hole = { x: 58, y: -18, w: 20, h: 18 };
+    state.t = 0;
+    render();
+  });
+  document.getElementById('airOn').addEventListener('change', e => { state.airOn = e.target.checked; state.t = 0; render(); });
+  document.getElementById('kAir').addEventListener('input', e => { state.kAir = Math.max(0, Number(e.target.value) || 0); state.t = 0; render(); });
+  document.getElementById('platformOn').addEventListener('change', e => { state.platformOn = e.target.checked; render(); });
+  document.getElementById('holeOn').addEventListener('change', e => { state.holeOn = e.target.checked; render(); });
+
+  function pointerPos(e) {
+    const r = canvas.getBoundingClientRect();
+    const touch = e.touches?.[0] || e.changedTouches?.[0] || e;
+    return { x: touch.clientX - r.left, y: touch.clientY - r.top };
+  }
+
+  function hitBlock(sc, b, type, p) {
+    const x = sc.X(b.x), top = sc.Y(type === 'hole' ? 0 : b.h), w = b.w*sc.s, h = Math.abs((type === 'hole' ? b.y : b.h))*sc.s;
+    const handle = Math.hypot(p.x-(x+w), p.y-(top+h)) < 16;
+    const inside = p.x>=x && p.x<=x+w && p.y>=top && p.y<=top+h;
+    if (handle) return 'resize';
+    if (inside) return 'move';
+    return null;
+  }
+
+  function onDown(e) {
+    e.preventDefault();
+    const p = pointerPos(e);
+    const sc = scaleInfo();
+    for (const hb of dimHitboxes) {
+      if (p.x>=hb.x && p.x<=hb.x+hb.w && p.y>=hb.y && p.y<=hb.y+hb.h) {
+        openDimEditor(hb.target);
+        return;
+      }
+    }
+    const body = posAt(state.t);
+    const bx = sc.X(body.x), by = sc.Y(body.y);
+    const bodyHit = Math.hypot(p.x - bx, p.y - by) <= 22;
+    const h1 = state.platformOn ? hitBlock(sc, state.platform, 'platform', p) : null;
+    const h2 = state.holeOn ? hitBlock(sc, state.hole, 'hole', p) : null;
+    if (bodyHit) state.drag = { target: 'body', mode: 'move', start: p, orig: { h: state.h, t: state.t }, sc };
+    else if (h1) state.drag = { target: 'platform', mode: h1, start: p, orig: {...state.platform}, sc };
+    else if (h2) state.drag = { target: 'hole', mode: h2, start: p, orig: {...state.hole}, sc };
+  }
+
+  function onMove(e) {
+    if (!state.drag) return;
+    e.preventDefault();
+    const p = pointerPos(e);
+    const d = state.drag;
+    const dx = (p.x - d.start.x) / d.sc.s;
+    const dyWorld = -(p.y - d.start.y) / d.sc.s;
+
+    if (d.target === 'body') {
+      state.playing = false;
+      const tImp = impactTime();
+      let bestT = 0;
+      let bestDist = Infinity;
+      const steps = 500;
+
+      for (let i = 0; i <= steps; i++) {
+        const t = tImp * i / steps;
+        const q = posAt(t);
+        const qx = d.sc.X(q.x);
+        const qy = d.sc.Y(q.y);
+        const dist = Math.hypot(p.x - qx, p.y - qy);
+        if (dist < bestDist) {
+          bestDist = dist;
+          bestT = t;
+        }
+      }
+
+      state.t = bestT;
+      render();
+      return;
+    }
+
+    const b = d.target === 'platform' ? state.platform : state.hole;
+    if (d.mode === 'move') {
+      b.x = Math.max(0, d.orig.x + dx);
+      if (d.target === 'platform') b.h = clamp(d.orig.h + dyWorld, 0.5, 80);
+      else b.y = clamp(d.orig.y + dyWorld, -80, -0.5);
+    } else {
+      b.w = clamp(d.orig.w + dx, 3, 120);
+      if (d.target === 'platform') b.h = clamp(d.orig.h + dyWorld, 0.5, 80);
+      else b.y = clamp(d.orig.y + dyWorld, -80, -0.5);
+    }
+    state.t = Math.min(state.t, impactTime());
+    render();
+  }
+
+  function onUp() { state.drag = null; }
+  canvas.addEventListener('mousedown', onDown);
+  window.addEventListener('mousemove', onMove);
+  window.addEventListener('mouseup', onUp);
+  canvas.addEventListener('touchstart', onDown, {passive:false});
+  window.addEventListener('touchmove', onMove, {passive:false});
+  window.addEventListener('touchend', onUp);
+
+  function openDimEditor(target) {
+    state.dimTarget = target;
+    document.getElementById('dimTitle').textContent = target === 'platform' ? 'Výška plošiny' : 'Hloubka díry';
+    document.getElementById('dimInput').value = target === 'platform' ? state.platform.h : Math.abs(state.hole.y);
+    document.getElementById('dimEditor').style.display = 'flex';
+    setTimeout(() => document.getElementById('dimInput').focus(), 0);
+  }
+
+  function closeDimEditor() {
+    document.getElementById('dimEditor').style.display = 'none';
+    state.dimTarget = null;
+  }
+
+  document.getElementById('dimSave').addEventListener('click', () => {
+    const v = Math.max(0.1, Number(document.getElementById('dimInput').value) || 0.1);
+    if (state.dimTarget === 'platform') state.platform.h = v;
+    if (state.dimTarget === 'hole') state.hole.y = -v;
+    closeDimEditor();
+    render();
+  });
+  document.getElementById('dimCancel').addEventListener('click', closeDimEditor);
+  document.getElementById('dimEditor').addEventListener('click', e => { if (e.target.id === 'dimEditor') closeDimEditor(); });
+
+  function animate(now) {
+    const dt = Math.min(.05, (now - state.last) / 1000);
+    state.last = now;
+    if (state.playing) {
+      state.t += dt * state.speed;
+      const tImp = impactTime();
+      if (state.t >= tImp) { state.t = tImp; state.playing = false; }
+      render();
+    }
+    requestAnimationFrame(animate);
+  }
+
+  window.addEventListener('resize', render);
+  buildControls();
+  render();
+  requestAnimationFrame(animate);
+})();
+</script>
+</body>
+</html>
